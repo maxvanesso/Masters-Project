@@ -94,7 +94,6 @@ datar1 <- data[,c(1:31,33:42)]
 
 datar2 <- data[,c(1:31, 33:41, 43)]
 
-
 ##############################################################################
 ################ DESCRIPTIVE ANALYSIS ########################################
 ##############################################################################
@@ -331,7 +330,7 @@ print(g)
 ############### BOXPLOT #################
 #########################################
 
-data$interval.age <- cut(data[,1],breaks = c(seq(-1,20,22), 21, 50, 70, 130), labels = c("Child and Teenagers", "Adult", "Mature", "Senior"))
+data$interval.age <- cut(data[,1], breaks = c(seq(-1,20,22), 21, 50, 70, 130), labels = c("Child and Teenagers", "Adult", "Mature", "Senior"))
 ggplot(data, aes(x = as.factor(data$Sexe), y = data[,32])) + geom_boxplot() +
   facet_wrap(~interval.age)
 
