@@ -238,8 +238,8 @@ histogram(dataRN$DiesReadmissio, xlab="Days until readmission", ylab="Percentage
 
 df_cobertura <- data.frame(patients = tail(sort(table(dataRY$Cobertura)), 10))
 
-qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq, xlab = "Insurance company", ylab = "Number of patients", 
-      main = "Most common insurances") + theme_grey() + 
+qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq/676, xlab = "Insurance company", ylab = "Number of readmitted patients", 
+      main = "Most common insurances") + theme_grey() + scale_y_continuous(labels=percent) +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -247,8 +247,8 @@ qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq, xlab = "In
 
 df_cobertura <- data.frame(patients = tail(sort(table(dataRN$Cobertura)), 10))
 
-qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq, xlab = "Insurance company", ylab = "Number of patients", 
-      main = "Most common insurances") + theme_grey() + 
+qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq/18216, xlab = "Insurance company", ylab = "Number of no-readmitted patients", 
+      main = "Most common insurances") + theme_grey() + scale_y_continuous(labels=percent) +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -258,16 +258,18 @@ qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq, xlab = "In
 
 df_poblacio <- data.frame(patients = tail(sort(table(dataRY$Poblacio)), 10))
 
-qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq, xlab = "City", ylab = "Number of patients", 
-      main = "Most common cities") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold")) +
+qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq/676, xlab = "City", ylab = "Number of readmitted patients", 
+      main = "Most common cities") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
 
 df_poblacio <- data.frame(patients = tail(sort(table(dataRN$Poblacio)), 10))
 
-qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq, xlab = "City", ylab = "Number of patients", 
-      main = "Most common cities") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold")) +
+qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq/18216, xlab = "City", ylab = "Number of no-readmitted patients", 
+      main = "Most common cities") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
@@ -276,16 +278,18 @@ qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq, xlab = "City
 
 df_grupdiag <- data.frame(patients = tail(sort(table(dataRY$GrupDiag)), 10))
 
-qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq, xlab = "Diagnostic Group", ylab = "Number of patients", 
-      main = "Most common diagnosis") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
+qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq/676, xlab = "Diagnostic Group", ylab = "Number of readmitted patients", 
+      main = "Most common diagnosis") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
 
 df_grupdiag <- data.frame(patients = tail(sort(table(dataRN$GrupDiag)), 10))
 
-qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq, xlab = "Diagnostic Group", ylab = "Number of patients", 
-      main = "Most common diagnosis") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
+qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq/18216, xlab = "Diagnostic Group", ylab = "Number of no-readmitted patients", 
+      main = "Most common diagnosis") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
@@ -294,16 +298,18 @@ qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq, xlab = "Diag
 
 df_servei <- data.frame(patients = tail(sort(table(dataRY$Servei)), 10))
 
-qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq, xlab = "Service", ylab = "Number of patients", 
-      main = "Most common service") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold"))+
+qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq/676, xlab = "Service", ylab = "Number of readmitted patients", 
+      main = "Most common service") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
 
 df_servei <- data.frame(patients = tail(sort(table(dataRN$Servei)), 10))
 
-qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq, xlab = "Service", ylab = "Number of patients", 
-      main = "Most common service") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold"))+
+qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq/18216, xlab = "Service", ylab = "Number of no-readmitted patients", 
+      main = "Most common service") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
@@ -312,18 +318,23 @@ qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq, xlab = "Service"
 
 df_origenadm <- data.frame(patients = tail(sort(table(dataRY$OrigenAdmissio)), 5))
 
-qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq, xlab = "Origen", ylab = "Number of patients", 
-      main = "Most common origen") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold"))+
+qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq/676, xlab = "Origen", ylab = "Number of readmitted patients", 
+      main = "Most common origen") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
 
 df_origenadm <- data.frame(patients = tail(sort(table(dataRN$OrigenAdmissio)), 5))
 
-qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq, xlab = "Origen", ylab = "Number of patients", 
-      main = "Most common origen") + theme_grey() + theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold"))+
+qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq/18216, xlab = "Origen", ylab = "Number of no-readmitted patients", 
+      main = "Most common origen") + theme_grey() + scale_y_continuous(labels=percent) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
+
+##################################################################################################
+##################################################################################################
 
 
 vect <- rep(0,18892)
@@ -337,10 +348,139 @@ vect <- replace(vect, vect == "NaN", 0)
 datanumeric[,166] <- vect
 
 index1 <- which(colnames(datanumeric) == 'V166')
-colnames(datanumeric)[index1] <- 'Readmissio'
+colnames(datanumeric)[index1] <- 'ReadmissioN1'
 
 
-mu <- ddply(datanumeric, "Readmissio", summarise, grp.mean=mean(EdatEnAlta))
+### Age ###
 
-p <- ggplot(data, aes(x=EdatEnAlta, color=ReadmissioN1)) + geom_histogram(binwidth=1, fill=pers.beige, alpha=0.8, position = "dodge")
-p+ geom_vline(data=mu, aes(xintercept=grp.mean, color=c("red", "blue")), linetype="dashed") + geom_density(alpha=.1, fill=pers.blue) 
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(EdatEnAlta))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=EdatEnAlta, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="EdatEnAlta histogram plot",x="EdatEnAlta (Age)", y = "Density")
+
+
+
+
+### Number of comorbidities ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumComorbiditats))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=NumComorbiditats, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="NumComorbiditats histogram plot",x="NumComorbiditats (Comorbidities)", y = "Density")
+
+
+
+
+### Number of drugs on discharge ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumMedAlta))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=NumMedAlta, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="NumMedAlta histogram plot",x="NumMedAlta (Number of drugs on discharge)", y = "Density")
+
+
+
+
+### Number of procedures ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumProc))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=NumProc, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="NumProc histogram plot",x="NumProc (Number of Procedures)", y = "Density")
+
+
+
+
+
+### Number of lab tests ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumLab))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=NumLab, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="NumLab histogram plot",x="NumLab (Number of lab tests)", y = "Density")
+
+
+
+
+
+### Number of yearly admissions ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumAdmissionsAny))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=NumAdmissionsAny, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="NumAdmissionsAny histogram plot",x="NumAdmissionsAny (Yearly admissions)", y = "Density")
+
+
+
+
+### Number of emergencies ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumUrgenciesAny))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=NumUrgenciesAny, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="NumUrgenciesAny histogram plot",x="NumUrgenciesAny (Emergencies)", y = "Density")
+
+
+
+
+### Number of visits ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumVisitesAny))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=NumVisitesAny, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="NumVisitesAny histogram plot",x="NumVisitesAny (Appointments)", y = "Density")
+
+
+
+
+### Days until readmission ###
+
+mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(DiesReadmissio))
+
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
+mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+
+p <- ggplot(data, aes(x=DiesReadmissio, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+  theme_classic() + labs(title="DiesReadmissio histogram plot",x="DiesReadmissio (Days until readmission)", y = "Density")

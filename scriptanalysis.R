@@ -15,6 +15,8 @@ library(corrplot)
 library(ranger)
 library(caTools)
 library(mlr)
+library(ROCR)
+library(C50)
 
 # Setting a seed to make the models that use randomization comparable between each other
 set.seed(826)
@@ -39,6 +41,19 @@ data <- data[,c(1:158, 160:164, 166:183)]
 data <- cbind(data[,-c(2:143,145:157,159:168,170:172,179:181)],
               data.frame(apply(data[,c(2:143,145:157,159:168,170:172,179:181)], 2, factor)))
 
+##################################################################################################
+############################## OUTLIERS DETECTION AND ELIMINATION ################################
+##################################################################################################
+
+which((data$EdatEnAlta) > (mean(data$EdatEnAlta)+3*sd(data$EdatEnAlta)))
+which((data$NumMedAlta) > (mean(data$NumMedAlta)+6*sd(data$NumMedAlta)))
+which((data$NumProc) > (mean(data$NumProc)+3*sd(data$NumProc)))
+which((data$NumLab) > (mean(data$NumLab)+3*sd(data$NumLab)))
+which((data$NumAdmissionsAny) > (mean(data$NumAdmissionsAny)+3*sd(data$NumAdmissionsAny)))
+which((data$NumUrgenciesAny) > (mean(data$NumUrgenciesAny)+3*sd(data$NumUrgenciesAny)))
+which((data$NumVisitesAny) > (mean(data$NumVisitesAny)+3*sd(data$NumVisitesAny)))
+
+
 # Build a matrix for each response (Length of Stay (LoS), Readmission Type 1 (R1), Readmission Type 2 (R2), Readmission Type 3 (R3))
 LoS <- data[,-c(179:181)] # The response variable is the 4th column
 LoS <- LoS[,-10] # Take out the DiesReadmissio variable
@@ -46,6 +61,13 @@ LoS <- LoS[-17383,] # Eliminate the row 17383 because it has a LoS of -1
 LoS$DuradaEstada <- cut(LoS[,4], breaks = c(-1, 2, 7, 133), labels = c("Less than 2 days", "Between 3 to 7 days", "More than 1 week")) # Transform the LoS variable into factor intervals labeled
 R1 <- data[,-c(4,180,181)] # The response variable is the 178th column
 R1 <- R1[,-9] # Take out the DiesReadmissio variable
+R1 <- R1[,-10] # Take out Població variable
+
+R1 <- cbind(datanumeric, newdiaggrup)
+R1 <- R1[,-c(7,8,10)]
+R1$Poblacio2 <- as.factor(data$Poblacio2)
+R1$Cobertura2 <- as.factor(data$Cobertura2)
+
 R2 <- data[,-c(4,179,181)] # The response variable is the 178th column
 R2 <- R2[,-9] # Take out the DiesReadmissio variable
 R3 <- data[,-c(4,179,180)] # The response variable is the 178th column
