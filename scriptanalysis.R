@@ -17,6 +17,7 @@ library(caTools)
 library(mlr)
 library(ROCR)
 library(C50)
+library(glmnet)
 
 # Setting a seed to make the models that use randomization comparable between each other
 set.seed(826)
@@ -41,37 +42,56 @@ data <- data[,c(1:158, 160:164, 166:183)]
 data <- cbind(data[,-c(2:143,145:157,159:168,170:172,179:181)],
               data.frame(apply(data[,c(2:143,145:157,159:168,170:172,179:181)], 2, factor)))
 
+data <- data[,-c(12,14:19)] # Deletion of the categorical variables with too many categories causing issues
+data <- data[,-10] # Deletion of DiesReadmissio variable
+
+
+##################################################################################################
+############################## VARIABLE GRUPDIAG TRANSFORMATION ##################################
+##################################################################################################
+
+unique(data$GrupDiag)
+newdiaggrup <- substr(data$GrupDiag,1,2)
+unique(newdiaggrup)
+
+
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "NO", NA)
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "VB", NA)
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "VF", NA)
+data$GrupDiag <- as.factor(newdiaggrup)
+data <- data[,-c(158,163)] # Take out HoraIngres, HoraAlta
+data <- na.omit(data)
+
 ##################################################################################################
 ############################## OUTLIERS DETECTION AND ELIMINATION ################################
 ##################################################################################################
 
-which((data$EdatEnAlta) > (mean(data$EdatEnAlta)+3*sd(data$EdatEnAlta)))
-which((data$NumMedAlta) > (mean(data$NumMedAlta)+6*sd(data$NumMedAlta)))
-which((data$NumProc) > (mean(data$NumProc)+3*sd(data$NumProc)))
-which((data$NumLab) > (mean(data$NumLab)+3*sd(data$NumLab)))
-which((data$NumAdmissionsAny) > (mean(data$NumAdmissionsAny)+3*sd(data$NumAdmissionsAny)))
-which((data$NumUrgenciesAny) > (mean(data$NumUrgenciesAny)+3*sd(data$NumUrgenciesAny)))
-which((data$NumVisitesAny) > (mean(data$NumVisitesAny)+3*sd(data$NumVisitesAny)))
+# We are going to discard the observations with values more extreme than 0.1% of the data
+
+outliers <- unique(c(which(data$NumMedAlta > (quantile(data$NumMedAlta, probs = 0.999))),
+which(data$NumProc > (quantile(data$NumProc, probs = 0.999))),
+which(data$NumLab > (quantile(data$NumLab, probs = 0.999))),
+which(data$NumAdmissionsAny > (quantile(data$NumAdmissionsAny, probs = 0.999))),
+which(data$NumUrgenciesAny > (quantile(data$NumUrgenciesAny, probs = 0.999))),
+which(data$NumVisitesAny > (quantile(data$NumVisitesAny, probs = 0.999))),
+which(na.omit(data$DuradaEstada) > (quantile(data$DuradaEstada, probs = 0.999)))))
+
+datanO <- data[-outliers,]
 
 
 # Build a matrix for each response (Length of Stay (LoS), Readmission Type 1 (R1), Readmission Type 2 (R2), Readmission Type 3 (R3))
-LoS <- data[,-c(179:181)] # The response variable is the 4th column
-LoS <- LoS[,-10] # Take out the DiesReadmissio variable
+LoS <- data[,-c(169,170,171)] # The response variable is the 4th column
 LoS <- LoS[-17383,] # Eliminate the row 17383 because it has a LoS of -1
 LoS$DuradaEstada <- cut(LoS[,4], breaks = c(-1, 2, 7, 133), labels = c("Less than 2 days", "Between 3 to 7 days", "More than 1 week")) # Transform the LoS variable into factor intervals labeled
-R1 <- data[,-c(4,180,181)] # The response variable is the 178th column
-R1 <- R1[,-9] # Take out the DiesReadmissio variable
-R1 <- R1[,-10] # Take out Població variable
 
-R1 <- cbind(datanumeric, newdiaggrup)
-R1 <- R1[,-c(7,8,10)]
-R1$Poblacio2 <- as.factor(data$Poblacio2)
-R1$Cobertura2 <- as.factor(data$Cobertura2)
+R1 <- data[,-c(4,170,171)] # The response variable is the 169th column
+R2 <- data[,-c(4,169,171)] # The response variable is the 170th column
+R2$PeriodeIngres <- as.factor(as.character(R2$PeriodeIngres))
+R3 <- data[,-c(4,169,170)] # The response variable is the 170th column
 
-R2 <- data[,-c(4,179,181)] # The response variable is the 178th column
-R2 <- R2[,-9] # Take out the DiesReadmissio variable
-R3 <- data[,-c(4,179,180)] # The response variable is the 178th column
-R3 <- R3[,-9] # Take out the DiesReadmissio variable
+LoSnO <- datanO[,-c(169,170,171)] 
+LoSnO <- LoSnO[-17383,]
+LoSnO$DuradaEstada <- cut(LoSnO[,4], breaks = c(-1, 2, 7, 133), labels = c("Less than 2 days", "Between 3 to 7 days", "More than 1 week"))
 
 # Build a dataset with only the non-numeric variables
 datacategoric <- read.csv("~/Escritorio/Data Science/Masters_Project/readmissions_20160426.csv", header=T, na.strings=c(""," ","NA"), stringsAsFactors = FALSE)
@@ -309,12 +329,6 @@ which(is.na(LoS[,4]), arr.ind = T)
 # 18676: Missing date of entry
 # 18763: Missing date of entry
 
-###################################################
-############## COST MATRIX ########################
-###################################################
-
-CostMatrix <- matrix(c(0,10,1,0), nrow = 2, ncol = 2, byrow = T)
-
 
 # Delete the rows with NA in the response
 
@@ -340,7 +354,7 @@ fitControlLoS <- trainControl(## 5-fold CV
   method = "cv",
   number = 5, repeats = 1)
 
-gbmFit1LoS <- train(trainingLoSnzv$DuradaEstada ~ ., data = trainingLoSnzv,
+gbmFit1LoS <- caret::train(trainingLoSnzv$DuradaEstada ~ ., data = trainingLoSnzv,
                     method = "gbm",
                     trControl = fitControlLoS,
                     verbose = TRUE)
@@ -358,7 +372,7 @@ qplot(predictionsLoSgbm,test.labels) + geom_abline(slope = 1, col = 4)
 sum(floor(predictionsLoSgbm) == test.labels)/length(test.labels) # If I change floor for ceiling it drops to 0.10
 table(test.labels)
 table(floor(predictionsLoSgbm))
-table(predictionsLoSrf, test.labels)
+table(predictionsLoSgbm, test.labels)
 qplot(predictionsLoSgbm,test.labels, main = "Error types of GBMLoS") + geom_abline(slope = 1, col = 4)
 
 # Trying a rf
@@ -377,6 +391,61 @@ table(predictionsLoSrf, test.labels)
 qplot(predictionsLoSrf,test.labels, main = "Error types of RFLoS") + geom_abline(slope = 1, col = 4)
 
 
+glmnetFit1LoS <- train(trainingLoSnzv$DuradaEstada ~ ., data = trainingLoSnzv,
+                   method = "glmnet",
+                   trControl = fitControlLoS)
+
+predictionsLoSglmnet <- predict(glmnetFit1LoS, newdata = testingLoS)
+table(predictionsLoSglmnet, test.labels)
+
+
+
+#################################################
+######### LENGTH OF STAY W/O OUTLIERS ###########
+#################################################
+
+LoSnO <- LoSnO[-c(which(is.na(LoSnO[,4]), arr.ind = T)),]
+
+inTrainingLoSnO <- createDataPartition(LoSnO$DuradaEstada, p = .75, list = FALSE)
+trainingLoSnO <- LoSnO[ inTrainingLoSnO,]
+testingLoSnO <- na.omit(LoSnO[-inTrainingLoSnO,])
+test.labels <- testingLoSnO[,4]
+testingLoSnO <- testingLoSnO[,-4]
+
+nzvresult <- nzv(trainingLoSnO, saveMetrics = TRUE) # store the results for nzv
+
+zerovar <- row.names(nzvresult[nzvresult$zeroVar == TRUE,]) # subset only the variables with zero variance
+
+trainingLoSnOnzv <- trainingLoSnO[,!colnames(trainingLoSnO) %in% zerovar] # keep only the columns whose names are different from those in the zero variance object
+
+fitControlLoSnO <- trainControl(## 5-fold CV
+  method = "cv",
+  number = 5, repeats = 1)
+
+gbmFit1LoSnO <- caret::train(trainingLoSnOnzv$DuradaEstada ~ ., data = trainingLoSnOnzv,
+                           method = "gbm",
+                           trControl = fitControlLoSnO,
+                           verbose = TRUE)
+
+predictionsLoSnOgbm <- predict(gbmFit1LoSnO, newdata = testingLoSnO)
+table(predictionsLoSnOgbm, test.labels)
+
+
+rfFit1LoSnO <- train(trainingLoSnOnzv$DuradaEstada ~ ., data = trainingLoSnOnzv,
+                   method = "ranger",
+                   trControl = fitControlLoSnO)
+
+predictionsLoSnOrf <- predict(rfFit1LoSnO, newdata = testingLoSnO)
+table(predictionsLoSnOrf, test.labels)
+
+
+
+glmnetFit1LoSnO <- train(trainingLoSnOnzv$DuradaEstada ~ ., data = trainingLoSnOnzv,
+                       method = "glmnet",
+                       trControl = fitControlLoSnO)
+
+predictionsLoSnOglmnet <- predict(glmnetFit1LoSnO, newdata = testingLoSnO)
+table(predictionsLoSnOglmnet, test.labels)
 
 
 ########################
@@ -391,50 +460,17 @@ R1$ReadmissioN1 <- as.factor(R1$ReadmissioN1)
 inTrainingR1 <- createDataPartition(R1$ReadmissioN1, p = .75, list = FALSE)
 trainingR1 <- na.omit(R1[ inTrainingR1,])
 testingR1 <- na.omit(R1[-inTrainingR1,])
-#test.labels1 <- testingR1[,177]
-#testingR1 <- testingR1[,-177]
 
-nzvresultR1 <- nzv(trainingR1, saveMetrics = TRUE) # store the results for nzv
+nzvresultR1 <- nzv(R1, saveMetrics = TRUE) # store the results for nzv
 
-zerovarR1 <- row.names(nzvresultR1[nzvresultR1$zeroVar == TRUE,]) # subset only the variables with zero variance
+zerovarR1 <- row.names(nzvresultR1[nzvresultR1$nzv == TRUE,]) # subset only the variables with zero variance
+zerovarR1 <- zerovarR1[!zerovarR1 %in% "ReadmissioN1"]
 
 trainingR1nzv <- trainingR1[,!colnames(trainingR1) %in% zerovarR1]
 testingR1nzv <- testingR1[,!colnames(testingR1) %in% zerovarR1]# keep only the columns whose names are different from those in the zero variance object
 
-fitControlR1 <- trainControl(## 5-fold CV
-  method = "cv",
-  number = 5, repeats = 1)
-
-
-rfFit1R1 <- train(trainingR1nzv$ReadmissioN1 ~ ., data = trainingR1nzv,
-                    method = "ranger",
-                    trControl = fitControlR1,
-                    verbose = TRUE)
-
-# With the same seed we reach an accuracy of %
-predictionsR1rf <- predict(rfFit1R1, newdata = testingR1)
-sum(predictionsR1rf == test.labels1)/length(test.labels1)
-table(test.labels1)
-table(predictionsR1rf)
-table(predictionsR1rf, test.labels1)
-qplot(predictionsR1rf,test.labels1, main = "Error types of RF1") + geom_abline(slope = 1, col = 4)
-
-#####################################################
-# First try of logistic regression for 11 variables #
-#####################################################
-
-# LogisticFit1R1 <- train(trainingR1nzv$ReadmissioN1 ~ ., data = trainingR1nzv,
-#                         method = "LogitBoost",
-#                         trControl = fitControlR1,
-#                         verbose = TRUE)
-# 
-# # We reach an accuracy of 74.51%
-# predictionsR1Logistic <- predict(LogisticFit1R1, newdata = testingR1)
-# sum(predictionsR1Logistic == test.labels1)/length(test.labels1)
-# table(test.labels1)
-# table(predictionsR1Logistic)
-# table(predictionsR1Logistic, test.labels1)
-# qplot(predictionsR1Logistic,test.labels1, main = "Error types of Logistic1") + geom_abline(slope = 1, col = 4)
+trainingR1nzv <- trainingR1nzv[,-c(136,138)]
+testingR1nzv <- testingR1nzv[,-c(136,138)]
 
 
 ########################
@@ -443,72 +479,46 @@ qplot(predictionsR1rf,test.labels1, main = "Error types of RF1") + geom_abline(s
 
 # Trying a rf with all the variables for R2 to see what's going on
 
+R2$ReadmissioN2 <- as.character(R2$ReadmissioN2)
+R2$ReadmissioN2[R2$ReadmissioN2 == 'Y'] <- 1
+R2$ReadmissioN2[R2$ReadmissioN2 == 'N'] <- 0
+R2$ReadmissioN2 <- as.factor(R2$ReadmissioN2)
 inTrainingR2 <- createDataPartition(R2$ReadmissioN2, p = .75, list = FALSE)
 trainingR2 <- R2[ inTrainingR2,]
 testingR2 <- na.omit(R2[-inTrainingR2,])
-test.labels2 <- testingR2[,177]
-testingR2 <- testingR2[,-177]
 
 nzvresultR2 <- nzv(trainingR2, saveMetrics = TRUE) # store the results for nzv
 
 zerovarR2 <- row.names(nzvresultR2[nzvresultR2$zeroVar == TRUE,]) # subset only the variables with zero variance
 
 trainingR2nzv <- trainingR2[,!colnames(trainingR2) %in% zerovarR2] # keep only the columns whose names are different from those in the zero variance object
+testingR2nzv <- testingR2[,!colnames(testingR2) %in% zerovarR2]
 
-fitControlR2 <- trainControl(## 5-fold CV
-  method = "cv",
-  number = 5, repeats = 1)
-
-rfFit1R2 <- train(trainingR2nzv$ReadmissioN2 ~ ., data = trainingR2nzv,
-                  method = "ranger",
-                  trControl = fitControlR2,
-                  verbose = TRUE)
-
-# We reach an accuracy of %
-predictionsR2rf <- predict(rfFit1R2, newdata = testingR2)
-sum(predictionsR2rf == test.labels2)/length(test.labels2)
-table(test.labels2)
-table(predictionsR2rf)
-table(predictionsR2rf, test.labels2)
-qplot(predictionsR2rf,test.labels2, main = "Error types of RF2") + geom_abline(slope = 1, col = 4)
-
-
-
-#####################################################
-# First try of logistic regression for 13 variables #
-#####################################################
-
-# LogisticFit1R2 <- train(trainingR2nzv$ReadmissioN2 ~ ., data = trainingR2nzv,
-#                         method = "LogitBoost",
-#                         trControl = fitControlR2,
-#                         verbose = TRUE)
-# 
-# # We reach an accuracy of 89.02%
-# predictionsR2Logistic <- predict(LogisticFit1R2, newdata = testingR2)
-# sum(predictionsR2Logistic == test.labels2)/length(test.labels2)
-# table(test.labels2)
-# table(predictionsR2Logistic)
-# table(predictionsR2Logistic, test.labels2)
-# qplot(predictionsR2Logistic,test.labels2, main = "Error types of Logistic2") + geom_abline(slope = 1, col = 4)
-# 
-
+trainingR2nzv <- trainingR2nzv[,-c(135,137)]
+testingR2nzv <- testingR2nzv[,-c(135,137)]
 
 ########################
 ######### R3 ###########
 ########################
 
 # Trying a rf with all the variables for R3 to see what's going on
+
+R3$ReadmissioN3 <- as.character(R3$ReadmissioN3)
+R3$ReadmissioN3[R3$ReadmissioN3 == 'Y'] <- 1
+R3$ReadmissioN3[R3$ReadmissioN3 == 'N'] <- 0
+R3$ReadmissioN3 <- as.factor(R3$ReadmissioN3)
 inTrainingR3 <- createDataPartition(R3$ReadmissioN3, p = .75, list = FALSE)
 trainingR3 <- R3[ inTrainingR3,]
 testingR3 <- na.omit(R3[-inTrainingR3,])
-test.labels3 <- testingR3[,177]
-testingR3 <- testingR3[,-177]
+#test.labels3 <- testingR3[,168]
+#testingR3 <- testingR3[,-168]
 
 nzvresultR3 <- nzv(trainingR3, saveMetrics = TRUE) # store the results for nzv
 
 zerovarR3 <- row.names(nzvresultR3[nzvresultR3$zeroVar == TRUE,]) # subset only the variables with zero variance
 
 trainingR3nzv <- trainingR3[,!colnames(trainingR3) %in% zerovarR3] # keep only the columns whose names are different from those in the zero variance object
+testingR3nzv <- testingR3[,!colnames(testingR3) %in% zerovarR3]
 
 fitControlR3 <- trainControl(## 5-fold CV
   method = "cv",
@@ -561,173 +571,6 @@ qplot(predictionsR3Logistic,test.labels3, main = "Error types of Logistic3") + g
 #####################################################################################################################
 
 
-# Generate a matrix with the top X numeric variables selected by the FS plus the categorical variables
-LoS19 <- cbind(LoS[,colnames(LoS) %in% colnames(LoSvars19)], LoS[,colnames(LoS) %in% colnames(datacategoric)])
-
-inTrainingLoS19 <- createDataPartition(LoS19$DuradaEstada, p = .75, list = FALSE)
-trainingLoS19 <- LoS19[ inTrainingLoS19,]
-testingLoS19 <- na.omit(LoS19[-inTrainingLoS19,])
-test.labels19 <- testingLoS19[,3]
-testingLoS19 <- testingLoS19[,-3]
-
-# Trying to solve for factor variables with only 1 factor that cause trouble in the model
-nzvresult19 <- nzv(trainingLoS19, saveMetrics = TRUE) # store the results for nzv
-
-zerovar19 <- row.names(nzvresult19[nzvresult19$zeroVar == TRUE,]) # subset only the variables with zero variance
-
-trainingLoS19nzv <- trainingLoS19[,!colnames(trainingLoS19) %in% zerovar19]
-
-LRFit1LoS19 <- train(trainingLoS19nzv$DuradaEstada ~ ., data = trainingLoS19nzv,
-                     method = "glm", family = poisson(),
-                     trControl = fitControlLoS1)
-
-predictionsLoS19rf <- predict(rfFit1LoS19, newdata = testingLoS19)
-MSErf19 <- sum((predictionsLoS19rf-test.labels19)^2)/(length(predictionsLoS19rf))
-qplot(predictionsLoS19rf,test.labels19) + geom_abline(slope = 1, col = 4)
-
-
-########################
-######### R1 ###########
-########################
-
-# Trying a RF with the best 11 variables from the FS plus the categorical variables
-R111 <- cbind(R1[,colnames(R1) %in% colnames(R1vars11)], R1[,colnames(R1) %in% colnames(datacategoric)])
-
-inTrainingR111 <- createDataPartition(R111$ReadmissioN1, p = .75, list = FALSE)
-trainingR111 <- R111[ inTrainingR111,]
-testingR111 <- na.omit(R111[-inTrainingR111,])
-test.labels111 <- testingR111[,12]
-testingR111 <- testingR111[,-12]
-
-nzvresultR111 <- nzv(trainingR111, saveMetrics = TRUE) # store the results for nzv
-
-zerovarR111 <- row.names(nzvresultR111[nzvresultR111$zeroVar == TRUE,]) # subset only the variables with zero variance
-
-trainingR111nzv <- trainingR111[,!colnames(trainingR111) %in% zerovarR111] # keep only the columns whose names are different from those in the zero variance object
-
-rfFit1R111 <- train(trainingR111nzv$ReadmissioN1 ~ ., data = trainingR111nzv,
-                    method = "ranger",
-                    trControl = fitControlR1,
-                    verbose = TRUE)
-
-# With the same seed we reach an accuracy of 62.07%
-predictionsR111rf <- predict(rfFit1R111, newdata = testingR111)
-sum(predictionsR111rf == test.labels111)/length(test.labels111)
-table(test.labels111)
-table(predictionsR111rf)
-table(predictionsR111rf, test.labels111)
-qplot(predictionsR111rf,test.labels111, main = "Error types of RF111") + geom_abline(slope = 1, col = 4)
-
-
-LogisticFit1R111 <- train(trainingR111nzv$ReadmissioN1 ~ ., data = trainingR111nzv,
-                          method = "LogitBoost",
-                          trControl = fitControlR1,
-                          verbose = TRUE)
-
-# We reach an accuracy of 72.42%
-predictionsR111Logistic <- predict(LogisticFit1R111, newdata = testingR111)
-sum(predictionsR111Logistic == test.labels111)/length(test.labels111)
-table(test.labels111)
-table(predictionsR111Logistic)
-table(predictionsR111Logistic, test.labels111)
-qplot(predictionsR111Logistic,test.labels111, main = "Error types of Logistic111") + geom_abline(slope = 1, col = 4)
-
-
-########################
-######### R2 ###########
-########################
-
-R213 <- cbind(R2[,colnames(R2) %in% colnames(R2vars13)], R2[,colnames(R2) %in% colnames(datacategoric)])
-
-inTrainingR213 <- createDataPartition(R213$ReadmissioN2, p = .75, list = FALSE)
-trainingR213 <- R213[ inTrainingR213,]
-testingR213 <- na.omit(R213[-inTrainingR213,])
-test.labels213 <- testingR213[,14]
-testingR213 <- testingR213[,-14]
-
-nzvresultR213 <- nzv(trainingR213, saveMetrics = TRUE) # store the results for nzv
-
-zerovarR213 <- row.names(nzvresultR213[nzvresultR213$zeroVar == TRUE,]) # subset only the variables with zero variance
-
-trainingR213nzv <- trainingR213[,!colnames(trainingR213) %in% zerovarR213] # keep only the columns whose names are different from those in the zero variance object
-
-
-rfFit1R213 <- train(trainingR213nzv$ReadmissioN2 ~ ., data = trainingR213nzv,
-                    method = "ranger",
-                    trControl = fitControlR2,
-                    verbose = TRUE)
-
-# With the same seed we reach an accuracy of 69.62%
-predictionsR213rf <- predict(rfFit1R213, newdata = testingR213)
-sum(predictionsR213rf == test.labels213)/length(test.labels213)
-table(test.labels213)
-table(predictionsR213rf)
-table(predictionsR213rf, test.labels213)
-qplot(predictionsR213rf,test.labels213, main = "Error types of RF213") + geom_abline(slope = 1, col = 4)
-
-
-LogisticFit1R213 <- train(trainingR213nzv$ReadmissioN2 ~ ., data = trainingR213nzv,
-                          method = "LogitBoost",
-                          trControl = fitControlR2,
-                          verbose = TRUE)
-
-# We reach an accuracy of 67.09%
-predictionsR213Logistic <- predict(LogisticFit1R213, newdata = testingR213)
-sum(predictionsR213Logistic == test.labels213)/length(test.labels213)
-table(test.labels213)
-table(predictionsR213Logistic)
-table(predictionsR213Logistic, test.labels213)
-qplot(predictionsR213Logistic,test.labels213, main = "Error types of Logistic213") + geom_abline(slope = 1, col = 4)
-
-
-########################
-######### R3 ###########
-########################
-
-
-R312 <- cbind(R3[,colnames(R3) %in% colnames(R3vars12)], R3[,colnames(R3) %in% colnames(datacategoric)])
-R312 <- R312[,-6]
-
-inTrainingR312 <- createDataPartition(R312$ReadmissioN3, p = .75, list = FALSE)
-trainingR312 <- R312[ inTrainingR312,]
-testingR312 <- na.omit(R312[-inTrainingR312,])
-test.labels312 <- testingR312[,12]
-testingR312 <- testingR312[,-12]
-
-nzvresultR312 <- nzv(trainingR312, saveMetrics = TRUE) # store the results for nzv
-
-zerovarR312 <- row.names(nzvresultR312[nzvresultR312$zeroVar == TRUE,]) # subset only the variables with zero variance
-
-trainingR312nzv <- trainingR312[,!colnames(trainingR312) %in% zerovarR312] # keep only the columns whose names are different from those in the zero variance object
-
-rfFit1R312 <- train(trainingR312nzv$ReadmissioN3 ~ ., data = trainingR312nzv,
-                    method = "ranger",
-                    trControl = fitControlR3,
-                    verbose = TRUE)
-
-# We reach an accuracy of %
-predictionsR312rf <- predict(rfFit1R312, newdata = testingR312)
-sum(predictionsR312rf == test.labels312)/length(test.labels312)
-table(test.labels312)
-table(predictionsR312rf)
-table(predictionsR312rf, test.labels312)
-qplot(predictionsR312rf,test.labels312, main = "Error types of RF312") + geom_abline(slope = 1, col = 4)
-
-
-LogisticFit1R312 <- train(trainingR312nzv$ReadmissioN3 ~ ., data = trainingR312nzv,
-                          method = "LogitBoost",
-                          trControl = fitControlR3,
-                          verbose = TRUE)
-
-# We reach an accuracy of %
-predictionsR312Logistic <- predict(LogisticFit1R312, newdata = testingR312)
-sum(predictionsR312Logistic == test.labels312)/length(test.labels312)
-table(test.labels312)
-table(predictionsR312Logistic)
-table(predictionsR312Logistic, test.labels312)
-qplot(predictionsR312Logistic,test.labels312, main = "Error types of Logistic312") + geom_abline(slope = 1, col = 4)
-
-
 ##############################################################################################################
 ##############################################################################################################
 
@@ -736,6 +579,11 @@ qplot(predictionsR312Logistic,test.labels312, main = "Error types of Logistic312
 ###################################################
 ################### MLR ###########################
 ###################################################
+
+############### R1
+
+trainingR1nzv = trainingR1 # Use after selecting the significant variables only
+testingR1nzv = testingR1 # Use after selecting the significant variables only
 
 train.task <- makeClassifTask(data=trainingR1nzv, target = 'ReadmissioN1', positive = '1')
 test.task <- makeClassifTask(data=testingR1nzv, target = 'ReadmissioN1', positive = '1')
@@ -748,7 +596,13 @@ train.fun <- function(learner, train.task, test.task){
   fit = mlr::train(learner, train.task)
   train.pred = predict(fit, task = train.task)
   
-  test.pred = predict(fit, task = test.task)
+  d <- generateThreshVsPerfData(train.pred, measures = list(fpr, fnr, f1))
+  df = d$data
+  best.thres = df[order(df$f1, decreasing = TRUE),4]
+
+  test.pred = setThreshold(predict(fit, task = test.task), best.thres[1])
+  
+  #test.pred = predict(fit, task = test.task)
   
   return(list(train.pred = train.pred, test.pred = test.pred))
 }
@@ -773,3 +627,138 @@ model.results <- function(model){
               test.metrics = c(test.acc,test.auc,test.ppv,test.brier),
               train.matrix = train.matrix,test.matrix = test.matrix))
 }
+
+ # f1 = harmonic mean of ppv and tpr
+d <- generateThreshVsPerfData(LogisticR1mlr$test.pred, measures = list(fpr, fnr, f1))
+df = d$data
+df = df[order(df$f1, decreasing = T),]
+plotThreshVsPerf(d)
+
+c <- generateThreshVsPerfData(LogisticR1mlr$test.pred, measures = list(fpr, tpr))
+plotROCCurves(c)
+
+p <- generateThreshVsPerfData(LogisticR1mlr$test.pred, measures = list(ppv, tpr, tnr))
+plotROCCurves(p, measures = list(tpr, ppv), diagonal = FALSE)
+
+
+# glmnet regression with cv.glmnet - elastic net
+
+lrn <- makeLearner('classif.cvglmnet', predict.type = 'prob')
+rdesc <- makeResampleDesc("CV", iters = 10)
+ctrl <- makeTuneControlGrid()
+ps <- makeParamSet(makeDiscreteParam("alpha", values = seq(0.5,1,0.1)),
+                   makeDiscreteParam("s", values = c("lambda.min")))
+tuning = tuneParams("classif.cvglmnet", task = train.task, resampling = rdesc, par.set = ps,
+                    control = ctrl,measures = f1)
+
+lrn.cvglmnet = setHyperPars(makeLearner("classif.cvglmnet", predict.type = 'prob'), par.vals = tuning$x)
+
+cvglmnet = train.fun(lrn.cvglmnet,train.task,test.task)
+res.cvglmnet = model.results(cvglmnet)
+
+
+
+############### R2
+
+trainingR2nzv = trainingR2 # Use after selecting the significant variables only
+testingR2nzv = testingR2 # Use after selecting the significant variables only
+
+train.task2 <- makeClassifTask(data=trainingR2nzv, target = 'ReadmissioN2', positive = '1')
+test.task2 <- makeClassifTask(data=testingR2nzv, target = 'ReadmissioN2', positive = '1')
+
+lrn.logistic.R2 <- makeLearner("classif.logreg", predict.type = "prob")
+
+LogisticR2mlr <- train.fun(lrn.logistic.R2, train.task2, test.task2)
+
+train.fun <- function(learner, train.task, test.task){
+  fit = mlr::train(learner, train.task)
+  train.pred = predict(fit, task = train.task)
+  
+    d <- generateThreshVsPerfData(train.pred, measures = list(fpr, fnr, f1))
+    df = d$data
+    best.thres = df[order(df$f1, decreasing = TRUE),4]
+  
+    test.pred = setThreshold(predict(fit, task = test.task), best.thres[1])
+  
+  #test.pred = predict(fit, task = test.task)
+  
+  return(list(train.pred = train.pred, test.pred = test.pred))
+}
+
+d2 <- generateThreshVsPerfData(LogisticR2mlr$test.pred, measures = list(fpr, fnr, mmce))
+df2 = d2$data
+df2 = df2[order(df$f1),]
+plotThreshVsPerf(d2)
+
+c2 <- generateThreshVsPerfData(LogisticR2mlr$test.pred, measures = list(fpr, tpr))
+plotROCCurves(c2)
+
+p2 <- generateThreshVsPerfData(LogisticR2mlr$test.pred, measures = list(ppv, tpr, tnr))
+plotROCCurves(p2, measures = list(tpr, ppv), diagonal = FALSE)
+
+
+#glmnet regression with cv.glmnet - elastic net
+
+ps2 <- makeParamSet(makeDiscreteParam("alpha", values = seq(0,1,0.1)),
+                   makeDiscreteParam("s", values = c("lambda.min")))
+tuning = tuneParams("classif.cvglmnet", task = train.task2, resampling = rdesc, par.set = ps2,
+                    control = ctrl, measures = f1)
+
+lrn.cvglmnet2 = setHyperPars(makeLearner("classif.cvglmnet", predict.type = 'prob'), par.vals = tuning$x)
+
+cvglmnet2 = train.fun(lrn.cvglmnet2,train.task2,test.task2)
+res.cvglmnet2 = model.results(cvglmnet2)
+
+
+
+############### R3
+
+trainingR3nzv = trainingR3 # Use after selecting the significant variables only
+testingR3nzv = testingR3 # Use after selecting the significant variables only
+
+
+train.task3 <- makeClassifTask(data=trainingR3nzv, target = 'ReadmissioN3', positive = '1')
+test.task3 <- makeClassifTask(data=testingR3nzv, target = 'ReadmissioN3', positive = '1')
+
+lrn.logistic.R3 <- makeLearner("classif.logreg", predict.type = "prob")
+
+LogisticR3mlr <- train.fun(lrn.logistic.R3, train.task, test.task)
+
+train.fun <- function(learner, train.task, test.task){
+  fit = mlr::train(learner, train.task)
+  train.pred = predict(fit, task = train.task)
+  
+  d <- generateThreshVsPerfData(train.pred, measures = list(fpr, fnr, f1))
+  df = d$data
+  best.thres = df[order(df$f1, decreasing = TRUE),4]
+  
+  test.pred = setThreshold(predict(fit, task = test.task), best.thres[1])
+  
+  #test.pred = predict(fit, task = test.task)
+  
+  return(list(train.pred = train.pred, test.pred = test.pred))
+}
+
+d3 <- generateThreshVsPerfData(LogisticR3mlr$test.pred, measures = list(fpr, fnr, mmce))
+df3 = d3$data
+df3 = df3[order(df$mmce),]
+plotThreshVsPerf(d3)
+
+c3 <- generateThreshVsPerfData(LogisticR3mlr$test.pred, measures = list(fpr, tpr))
+plotROCCurves(c3)
+
+p3 <- generateThreshVsPerfData(LogisticR3mlr$test.pred, measures = list(ppv, tpr, tnr))
+plotROCCurves(p3, measures = list(tpr, ppv), diagonal = FALSE)
+
+#glmnet regression with cv.glmnet - elastic net
+
+ps3 <- makeParamSet(makeDiscreteParam("alpha", values = seq(0,1,0.1)),
+                    makeDiscreteParam("s", values = c("lambda.min")))
+tuning = tuneParams("classif.cvglmnet", task = train.task3, resampling = rdesc, par.set = ps3,
+                    control = ctrl, measures = f1)
+
+lrn.cvglmnet3 = setHyperPars(makeLearner("classif.cvglmnet", predict.type = 'prob'), par.vals = tuning$x)
+
+cvglmnet3 = train.fun(lrn.cvglmnet3,train.task3,test.task3)
+res.cvglmnet3 = model.results(cvglmnet3)
+

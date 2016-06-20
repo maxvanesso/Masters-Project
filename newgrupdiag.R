@@ -1,15 +1,14 @@
 datadg <- read.csv("~/Escritorio/Data Science/Masters_Project/readmissions_20160426.csv", header=T, na.strings=c(""," ","NA"), stringsAsFactors = FALSE)
 unique(datadg$GrupDiag)
-newdiaggrup <- substr(datadg$GrupDiag,3,3)
+newdiaggrup <- substr(datadg$GrupDiag,1,2)
 unique(newdiaggrup)
-newdiaggrup <- replace(newdiaggrup, newdiaggrup == "", "V")
 
-# Change all the categories with one observation to NA
-newdiaggrup <- replace(newdiaggrup, newdiaggrup == "N", NA)
-newdiaggrup <- replace(newdiaggrup, newdiaggrup == "P", NA)
-newdiaggrup <- replace(newdiaggrup, newdiaggrup == "Q", NA)
-newdiaggrup <- replace(newdiaggrup, newdiaggrup == "R", NA)
-newdiaggrup <- replace(newdiaggrup, newdiaggrup == "N", NA)
+
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "NO", NA)
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "VB", "VG")
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "VF", "VG")
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "VH", "VG")
+newdiaggrup <- replace(newdiaggrup, newdiaggrup == "VI", "VG")
 
 
 
@@ -148,7 +147,7 @@ mycontrol <- trainControl(method = "repeatedcv",
                           classProbs = TRUE,
                           summaryFunction = fourStats)
 
-mod1 <- train(trainingR1nzv$ReadmissioN1 ~ ., data = trainingR1nzv,
+mod1 <- caret::train(trainingR1nzv$ReadmissioN1 ~ ., data = trainingR1nzv,
               method = my_mod,
               ## Minimize the distance to the perfect model
               metric = "Dist",

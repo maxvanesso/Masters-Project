@@ -56,7 +56,7 @@ dataRN <- cbind(dataRN[,-c(2:143,145:157,159:168,170:172,179:181)],
 
 
 
-# Select only the R3 with positive values
+# Select only the NR
 dataRN <- dataRN[dataRN$ReadmissioN3 == "N",]
 dataRN <- dataRN[dataRN$ReadmissioN2 == "N",]
 dataRN <- dataRN[dataRN$ReadmissioN1 == "N",]
@@ -205,7 +205,6 @@ ggplot(dataRY, aes(x=dataRY[,1], y=dataRY[,179], color=dataRY[,179])) + geom_poi
 ###################################
 
 histogram(dataRY$EdatEnAlta, xlab="Age", ylab="Percentage of ReadmissioY", type="density", aspect = 0.5, breaks=max(dataRY$EdatEnAlta))
-legend("topright", c("Germany", "Plastic"), fill=c("blue", "red"))
 histogram(dataRN$EdatEnAlta, xlab="Age", ylab="Percentage of ReadmissioN", type="density", aspect = 0.5, breaks=max(dataRN$EdatEnAlta))
 
 histogram(dataRY$NumComorbiditats, xlab="Number of comorbidities", ylab="Percentage of ReadmissioY", breaks=max(dataRY$NumComorbiditats))
@@ -335,20 +334,6 @@ qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq/18216, xlab
 
 ##################################################################################################
 ##################################################################################################
-
-
-vect <- rep(0,18892)
-
-for(i in 1:nrow(datanumeric)){
-  vect[i] <- sum(datanumeric$ReadmissioN1[i], datanumeric$ReadmissioN2[i], datanumeric$ReadmissioN3[i])/sum(datanumeric$ReadmissioN1[i], datanumeric$ReadmissioN2[i], datanumeric$ReadmissioN3[i])
-  } 
-
-vect <- replace(vect, vect == "NaN", 0)
-
-datanumeric[,166] <- vect
-
-index1 <- which(colnames(datanumeric) == 'V166')
-colnames(datanumeric)[index1] <- 'ReadmissioN1'
 
 
 ### Age ###
