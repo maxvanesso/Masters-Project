@@ -143,12 +143,30 @@ datanumeric <- sapply(datanumeric, as.numeric)
 
 datanumeric <- as.data.frame(datanumeric)
 
-datanumeric <- datanumeric[datanumeric$ReadmissioN3 == 0&datanumeric$ReadmissioN2 == 0&datanumeric$ReadmissioN1 == 0,]
+datanumericNR <- datanumeric[datanumeric$ReadmissioN3 == 0&datanumeric$ReadmissioN2 == 0&datanumeric$ReadmissioN1 == 0,]
+
+x <- as.vector(rownames(datanumericNR))
+datanumericR <- datanumeric[as.numeric(rownames(dataRY)),]
+  
+# To get the general readmission column for descriptive work
+datanumeric1 <- datanumeric
+datanumeric1$GeneralReadmission <- rowSums(datanumeric[,8:10])
+
+datanumeric1$GeneralReadmission[datanumeric1$GeneralReadmission > 0] <- 1
+
+# Include GeneralReadmission in data
+data$GeneralReadmission <- datanumeric1$GeneralReadmission
+
+data$GeneralReadmission <- replace(data$GeneralReadmission, data$GeneralReadmission == 1, "Y")
+data$GeneralReadmission <- replace(data$GeneralReadmission, data$GeneralReadmission == 0, "N")
+
+###
+datanumericNR <- datanumeric[datanumeric$ReadmissioN3 == 0&datanumeric$ReadmissioN2 == 0&datanumeric$ReadmissioN1 == 0,]
 
 # We select the 150 with var > 0 if we take out the nzv as well we will end up with the 49 variables
 cornzvresult <- nzv(datanumeric, saveMetrics = TRUE) # store the results for nzv
 
-corzerovar150 <- row.names(cornzvresult[cornzvresult$zeroVar == TRUE,]) # subset only the variables with zero variance
+corzerovar150 <- row.names(cornzvresult[cornzvresult$nzv == TRUE,]) # subset only the variables with zero variance
 
 datanumericnzv150 <- datanumeric[,!colnames(datanumeric) %in% corzerovar150] # keep only the columns whose names are different from those in the zero variance object
 
@@ -156,6 +174,31 @@ correlation150 <- cor(datanumericnzv150, use="pairwise.complete.obs") # if there
 
 corrplot(correlation150, method="square", tl.cex = 0.3, order = "hclust") # How to visualize it better?
 
+
+# Correlation nzvR
+
+cornzvresultR <- nzv(datanumericR, saveMetrics = TRUE) # store the results for nzv
+
+corzerovarR <- row.names(cornzvresultR[cornzvresultR$nzv == TRUE,]) # subset only the variables with zero variance
+
+datanumericnzvR <- datanumericR[,!colnames(datanumericR) %in% corzerovarR] # keep only the columns whose names are different from those in the zero variance object
+
+correlationR <- cor(datanumericnzvR, use="pairwise.complete.obs") # if there are NA the correlation is computed only with the completed pairs of the two columns
+
+corrplot(correlationR, method="square", tl.cex = 0.3, order = "hclust") # How to visualize it better?
+
+
+# Correlation nzvNR
+
+cornzvresultNR <- nzv(datanumericNR, saveMetrics = TRUE) # store the results for nzv
+
+corzerovarNR <- row.names(cornzvresultNR[cornzvresultNR$nzv == TRUE,]) # subset only the variables with zero variance
+
+datanumericnzvNR <- datanumericNR[,!colnames(datanumericNR) %in% corzerovarNR] # keep only the columns whose names are different from those in the zero variance object
+
+correlationNR <- cor(datanumericnzvNR, use="pairwise.complete.obs") # if there are NA the correlation is computed only with the completed pairs of the two columns
+
+corrplot(correlationNR, method="square", tl.cex = 0.3, order = "hclust") # How to visualize it better?
 
 ##############################################################################
 ################ DESCRIPTIVE ANALYSIS ########################################
@@ -338,44 +381,40 @@ qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq/18216, xlab
 
 ### Age ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(EdatEnAlta))
+mu <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(EdatEnAlta))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu$GeneralReadmission <- replace(mu$GeneralReadmission, mu$GeneralReadmission == 1, "Y")
+mu$GeneralReadmission <- replace(mu$GeneralReadmission, mu$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=EdatEnAlta, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
+p <- ggplot(data, aes(x=EdatEnAlta, color=GeneralReadmission)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+geom_vline(data=mu, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
 p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="EdatEnAlta histogram plot",x="EdatEnAlta (Age)", y = "Density")
 
 
-
-
 ### Number of comorbidities ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumComorbiditats))
+mu1 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(na.omit(NumComorbiditats)))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu1$GeneralReadmission <- replace(mu1$GeneralReadmission, mu1$GeneralReadmission == 1, "Y")
+mu1$GeneralReadmission <- replace(mu1$GeneralReadmission, mu1$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=NumComorbiditats, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p1 <- ggplot(na.omit(data), aes(x=NumComorbiditats, color=GeneralReadmission)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu1, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p1  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="NumComorbiditats histogram plot",x="NumComorbiditats (Comorbidities)", y = "Density")
-
-
 
 
 ### Number of drugs on discharge ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumMedAlta))
+mu2 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(NumMedAlta))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu2$GeneralReadmission <- replace(mu2$GeneralReadmission, mu2$GeneralReadmission == 1, "Y")
+mu2$GeneralReadmission <- replace(mu2$GeneralReadmission, mu2$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=NumMedAlta, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p2 <- ggplot(na.omit(data), aes(x=NumMedAlta, color=GeneralReadmission)) + xlim(0,10) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu2, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p2  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="NumMedAlta histogram plot",x="NumMedAlta (Number of drugs on discharge)", y = "Density")
 
 
@@ -383,46 +422,42 @@ p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark
 
 ### Number of procedures ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumProc))
+mu3 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(NumProc))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu3$GeneralReadmission <- replace(mu3$GeneralReadmission, mu3$GeneralReadmission == 1, "Y")
+mu3$GeneralReadmission <- replace(mu3$GeneralReadmission, mu3$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=NumProc, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p3 <- ggplot(na.omit(data), aes(x=NumProc, color=GeneralReadmission)) + xlim(0,8) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu3, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p3  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="NumProc histogram plot",x="NumProc (Number of Procedures)", y = "Density")
-
-
 
 
 
 ### Number of lab tests ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumLab))
+mu4 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(NumLab))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu4$GeneralReadmission <- replace(mu4$GeneralReadmission, mu4$GeneralReadmission == 1, "Y")
+mu4$GeneralReadmission <- replace(mu4$GeneralReadmission, mu4$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=NumLab, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p4 <- ggplot(na.omit(data), aes(x=NumLab, color=GeneralReadmission)) + xlim(0,10) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu4, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p4  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="NumLab histogram plot",x="NumLab (Number of lab tests)", y = "Density")
-
-
 
 
 
 ### Number of yearly admissions ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumAdmissionsAny))
+mu5 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(NumAdmissionsAny))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu5$GeneralReadmission <- replace(mu5$GeneralReadmission, mu5$GeneralReadmission == 1, "Y")
+mu5$GeneralReadmission <- replace(mu5$GeneralReadmission, mu5$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=NumAdmissionsAny, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p5 <- ggplot(na.omit(data), aes(x=NumAdmissionsAny, color=GeneralReadmission)) + xlim(0,7) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu5, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p5  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="NumAdmissionsAny histogram plot",x="NumAdmissionsAny (Yearly admissions)", y = "Density")
 
 
@@ -430,14 +465,14 @@ p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark
 
 ### Number of emergencies ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumUrgenciesAny))
+mu6 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(NumUrgenciesAny))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu6$GeneralReadmission <- replace(mu6$GeneralReadmission, mu6$GeneralReadmission == 1, "Y")
+mu6$GeneralReadmission <- replace(mu6$GeneralReadmission, mu6$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=NumUrgenciesAny, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p6 <- ggplot(na.omit(data), aes(x=NumUrgenciesAny, color=GeneralReadmission)) + xlim(0,7) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu6, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p6  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="NumUrgenciesAny histogram plot",x="NumUrgenciesAny (Emergencies)", y = "Density")
 
 
@@ -445,27 +480,27 @@ p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark
 
 ### Number of visits ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(NumVisitesAny))
+mu7 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(NumVisitesAny))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu7$GeneralReadmission <- replace(mu7$GeneralReadmission, mu7$GeneralReadmission == 1, "Y")
+mu7$GeneralReadmission <- replace(mu7$GeneralReadmission, mu7$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=NumVisitesAny, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p7 <- ggplot(na.omit(data), aes(x=NumVisitesAny, color=GeneralReadmission)) + xlim(0,35) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu7, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p7  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="NumVisitesAny histogram plot",x="NumVisitesAny (Appointments)", y = "Density")
-
 
 
 
 ### Days until readmission ###
 
-mu <- ddply(datanumeric, "ReadmissioN1", summarise, grp.mean=mean(DiesReadmissio))
+mu8 <- ddply(datanumeric1, "GeneralReadmission", summarise, grp.mean=mean(DiesReadmissio))
 
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 1, "Y")
-mu$ReadmissioN1 <- replace(mu$ReadmissioN1, mu$ReadmissioN1 == 0, "N")
+mu8$GeneralReadmission <- replace(mu8$GeneralReadmission, mu8$GeneralReadmission == 1, "Y")
+mu8$GeneralReadmission <- replace(mu8$GeneralReadmission, mu8$GeneralReadmission == 0, "N")
 
-p <- ggplot(data, aes(x=DiesReadmissio, color=ReadmissioN1)) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
-  geom_vline(data=mu, aes(xintercept=grp.mean, color = ReadmissioN1), linetype="dashed")
-p  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
+p8 <- ggplot(na.omit(data), aes(x=DiesReadmissio, color=GeneralReadmission)) + xlim(0,25) + geom_histogram(aes(y=..density..), binwidth=1, fill="white", alpha=0.8, position = "dodge") +
+  geom_vline(data=mu8, aes(xintercept=grp.mean, color = GeneralReadmission), linetype="dashed")
+p8  + geom_density(alpha=.1, fill=pers.blue) + scale_color_brewer(palette = "Dark2") +
   theme_classic() + labs(title="DiesReadmissio histogram plot",x="DiesReadmissio (Days until readmission)", y = "Density")
+

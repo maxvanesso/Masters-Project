@@ -15,8 +15,6 @@ library(corrplot)
 library(ranger)
 library(caTools)
 library(mlr)
-library(ROCR)
-library(C50)
 library(glmnet)
 
 # Setting a seed to make the models that use randomization comparable between each other
@@ -159,7 +157,7 @@ datanumeric <- datanumeric[,-6] # Take out DiesReadmissio
 # We select the 150 with var > 0 if we take out the nzv as well we will end up with the 49 variables
 cornzvresult <- nzv(datanumeric, saveMetrics = TRUE) # store the results for nzv
 
-corzerovar150 <- row.names(cornzvresult[cornzvresult$zeroVar == TRUE,]) # subset only the variables with zero variance
+corzerovar150 <- row.names(cornzvresult[cornzvresult$nzv == TRUE,]) # subset only the variables with zero variance
 
 datanumericnzv150 <- datanumeric[,!colnames(datanumeric) %in% corzerovar150] # keep only the columns whose names are different from those in the zero variance object
 
@@ -623,8 +621,10 @@ model.results <- function(model){
   test.brier = mlr::performance(test.pred,brier)
   test.matrix = getConfMatrix(test.pred)
   
-  return(list(train.metrics = c(train.acc,train.auc,train.ppv,train.brier), 
-              test.metrics = c(test.acc,test.auc,test.ppv,test.brier),
+  return(list(train.metrics = c(train.acc,train.auc,
+                                train.ppv,train.brier), 
+              test.metrics = c(test.acc,test.auc,
+                               test.ppv,test.brier),
               train.matrix = train.matrix,test.matrix = test.matrix))
 }
 
@@ -656,7 +656,14 @@ lrn.cvglmnet = setHyperPars(makeLearner("classif.cvglmnet", predict.type = 'prob
 cvglmnet = train.fun(lrn.cvglmnet,train.task,test.task)
 res.cvglmnet = model.results(cvglmnet)
 
+d1.1 <- generateThreshVsPerfData(cvglmnet$test.pred, measures = list(fpr, fnr, f1))
+plotThreshVsPerf(d1.1)
 
+c1.1 <- generateThreshVsPerfData(cvglmnet$test.pred, measures = list(fpr, tpr))
+plotROCCurves(c1.1)
+
+p1.1 <- generateThreshVsPerfData(cvglmnet$test.pred, measures = list(ppv, tpr, tnr))
+plotROCCurves(p1.1, measures = list(tpr, ppv), diagonal = FALSE)
 
 ############### R2
 
@@ -685,9 +692,10 @@ train.fun <- function(learner, train.task, test.task){
   return(list(train.pred = train.pred, test.pred = test.pred))
 }
 
-d2 <- generateThreshVsPerfData(LogisticR2mlr$test.pred, measures = list(fpr, fnr, mmce))
-df2 = d2$data
-df2 = df2[order(df$f1),]
+# f1 = harmonic mean of ppv and tpr
+d2 <- generateThreshVsPerfData(LogisticR2mlr$test.pred, measures = list(fpr, fnr, f1))
+df2 = d$data
+df2 = df[order(df$f1, decreasing = T),]
 plotThreshVsPerf(d2)
 
 c2 <- generateThreshVsPerfData(LogisticR2mlr$test.pred, measures = list(fpr, tpr))
@@ -695,6 +703,7 @@ plotROCCurves(c2)
 
 p2 <- generateThreshVsPerfData(LogisticR2mlr$test.pred, measures = list(ppv, tpr, tnr))
 plotROCCurves(p2, measures = list(tpr, ppv), diagonal = FALSE)
+
 
 
 #glmnet regression with cv.glmnet - elastic net
@@ -709,7 +718,14 @@ lrn.cvglmnet2 = setHyperPars(makeLearner("classif.cvglmnet", predict.type = 'pro
 cvglmnet2 = train.fun(lrn.cvglmnet2,train.task2,test.task2)
 res.cvglmnet2 = model.results(cvglmnet2)
 
+d2.1 <- generateThreshVsPerfData(cvglmnet2$test.pred, measures = list(fpr, fnr, f1))
+plotThreshVsPerf(d2.1)
 
+c2.1 <- generateThreshVsPerfData(cvglmnet2$test.pred, measures = list(fpr, tpr))
+plotROCCurves(c2.1)
+
+p2.1 <- generateThreshVsPerfData(cvglmnet2$test.pred, measures = list(ppv, tpr, tnr))
+plotROCCurves(p2.1, measures = list(tpr, ppv), diagonal = FALSE)
 
 ############### R3
 
@@ -722,7 +738,7 @@ test.task3 <- makeClassifTask(data=testingR3nzv, target = 'ReadmissioN3', positi
 
 lrn.logistic.R3 <- makeLearner("classif.logreg", predict.type = "prob")
 
-LogisticR3mlr <- train.fun(lrn.logistic.R3, train.task, test.task)
+LogisticR3mlr <- train.fun(lrn.logistic.R3, train.task3, test.task3)
 
 train.fun <- function(learner, train.task, test.task){
   fit = mlr::train(learner, train.task)
@@ -739,9 +755,8 @@ train.fun <- function(learner, train.task, test.task){
   return(list(train.pred = train.pred, test.pred = test.pred))
 }
 
-d3 <- generateThreshVsPerfData(LogisticR3mlr$test.pred, measures = list(fpr, fnr, mmce))
-df3 = d3$data
-df3 = df3[order(df$mmce),]
+# f1 = harmonic mean of ppv and tpr
+d3 <- generateThreshVsPerfData(LogisticR3mlr$test.pred, measures = list(fpr, fnr, f1))
 plotThreshVsPerf(d3)
 
 c3 <- generateThreshVsPerfData(LogisticR3mlr$test.pred, measures = list(fpr, tpr))
@@ -749,6 +764,7 @@ plotROCCurves(c3)
 
 p3 <- generateThreshVsPerfData(LogisticR3mlr$test.pred, measures = list(ppv, tpr, tnr))
 plotROCCurves(p3, measures = list(tpr, ppv), diagonal = FALSE)
+
 
 #glmnet regression with cv.glmnet - elastic net
 
@@ -761,4 +777,13 @@ lrn.cvglmnet3 = setHyperPars(makeLearner("classif.cvglmnet", predict.type = 'pro
 
 cvglmnet3 = train.fun(lrn.cvglmnet3,train.task3,test.task3)
 res.cvglmnet3 = model.results(cvglmnet3)
+
+d3.1 <- generateThreshVsPerfData(cvglmnet3$test.pred, measures = list(fpr, fnr, f1))
+plotThreshVsPerf(d3.1)
+
+c3.1 <- generateThreshVsPerfData(cvglmnet3$test.pred, measures = list(fpr, tpr))
+plotROCCurves(c3.1)
+
+p3.1 <- generateThreshVsPerfData(cvglmnet3$test.pred, measures = list(ppv, tpr, tnr))
+plotROCCurves(p3.1, measures = list(tpr, ppv), diagonal = FALSE)
 
