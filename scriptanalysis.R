@@ -787,3 +787,26 @@ plotROCCurves(c3.1)
 p3.1 <- generateThreshVsPerfData(cvglmnet3$test.pred, measures = list(ppv, tpr, tnr))
 plotROCCurves(p3.1, measures = list(tpr, ppv), diagonal = FALSE)
 
+
+
+
+results <- read.csv("~/Escritorio/Data Science/Masters_Project/results.csv", header=T, dec=",", sep = "")
+
+dfr <- melt(results[,c('R1','AUC','Tpa','Tpb')],id.vars = 1)
+ggplot(dfr,aes(x = R1,y = value)) + scale_fill_manual(values=c('midnightblue', 'mediumseagreen', 'mediumvioletred')) +
+  geom_bar(stat="identity", aes(fill = variable), width = 0.3, colour="white", position = "dodge") + theme_bw()
+
+
+results2 <- read.csv("~/Escritorio/Data Science/Masters_Project/results2.csv", header=T, dec=",", sep = "")
+
+dfr2 <- melt(results2[,c('R2','AUC','Tpa','Tpb')],id.vars = 1)
+ggplot(dfr2,aes(x = R2,y = value)) + scale_fill_manual(values=c('midnightblue', 'mediumseagreen', 'mediumvioletred')) +
+  geom_bar(stat="identity", aes(fill = variable), width = 0.3, colour="white", position = "dodge") + theme_bw()
+
+
+results3 <- read.csv("~/Escritorio/Data Science/Masters_Project/results3.csv", header=T, dec=",", sep = "")
+
+dfr3 <- melt(results3[,c('R3','AUC','Tpa','Tpb')],id.vars = 1)
+ggplot(dfr3,aes(x = R3,y = value)) + scale_fill_manual(values=c('midnightblue', 'mediumseagreen', 'mediumvioletred')) +
+  geom_bar(stat="identity", aes(fill = variable), width = 0.3, colour="white", position = "dodge") + theme_bw()
+

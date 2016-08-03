@@ -281,7 +281,7 @@ histogram(dataRN$DiesReadmissio, xlab="Days until readmission", ylab="Percentage
 df_cobertura <- data.frame(patients = tail(sort(table(dataRY$Cobertura)), 10))
 
 qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq/676, xlab = "Insurance company", ylab = "Number of readmitted patients", 
-      main = "Most common insurances") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common insurances") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -290,7 +290,7 @@ qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq/676, xlab =
 df_cobertura <- data.frame(patients = tail(sort(table(dataRN$Cobertura)), 10))
 
 qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq/18216, xlab = "Insurance company", ylab = "Number of no-readmitted patients", 
-      main = "Most common insurances") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common insurances") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -301,7 +301,7 @@ qplot(x = df_cobertura$patients.Var1, y = df_cobertura$patients.Freq/18216, xlab
 df_poblacio <- data.frame(patients = tail(sort(table(dataRY$Poblacio)), 10))
 
 qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq/676, xlab = "City", ylab = "Number of readmitted patients", 
-      main = "Most common cities") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common cities") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -310,7 +310,7 @@ qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq/676, xlab = "
 df_poblacio <- data.frame(patients = tail(sort(table(dataRN$Poblacio)), 10))
 
 qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq/18216, xlab = "City", ylab = "Number of no-readmitted patients", 
-      main = "Most common cities") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common cities") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -321,7 +321,7 @@ qplot(x = df_poblacio$patients.Var1, y = df_poblacio$patients.Freq/18216, xlab =
 df_grupdiag <- data.frame(patients = tail(sort(table(dataRY$GrupDiag)), 10))
 
 qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq/676, xlab = "Diagnostic Group", ylab = "Number of readmitted patients", 
-      main = "Most common diagnosis") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common diagnosis") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -330,7 +330,7 @@ qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq/676, xlab = "
 df_grupdiag <- data.frame(patients = tail(sort(table(dataRN$GrupDiag)), 10))
 
 qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq/18216, xlab = "Diagnostic Group", ylab = "Number of no-readmitted patients", 
-      main = "Most common diagnosis") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common diagnosis") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold")) +
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -341,7 +341,7 @@ qplot(x = df_grupdiag$patients.Var1, y = df_grupdiag$patients.Freq/18216, xlab =
 df_servei <- data.frame(patients = tail(sort(table(dataRY$Servei)), 10))
 
 qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq/676, xlab = "Service", ylab = "Number of readmitted patients", 
-      main = "Most common service") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common service") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -350,7 +350,7 @@ qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq/676, xlab = "Serv
 df_servei <- data.frame(patients = tail(sort(table(dataRN$Servei)), 10))
 
 qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq/18216, xlab = "Service", ylab = "Number of no-readmitted patients", 
-      main = "Most common service") + theme_grey() + scale_y_continuous(labels=percent) +
+      main = "Most common service") + theme_grey() +
   theme(axis.text.x = element_text(angle = 70, hjust = 0.95, size = 12), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
@@ -361,8 +361,8 @@ qplot(x = df_servei$patients.Var1, y = df_servei$patients.Freq/18216, xlab = "Se
 df_origenadm <- data.frame(patients = tail(sort(table(dataRY$OrigenAdmissio)), 5))
 
 qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq/676, xlab = "Origen", ylab = "Number of readmitted patients", 
-      main = "Most common origen") + theme_grey() + scale_y_continuous(labels=percent) +
-  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold"))+
+      main = "Most common origen") + theme_grey() +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 8), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
@@ -370,8 +370,8 @@ qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq/676, xlab =
 df_origenadm <- data.frame(patients = tail(sort(table(dataRN$OrigenAdmissio)), 5))
 
 qplot(x = df_origenadm$patients.Var1, y = df_origenadm$patients.Freq/18216, xlab = "Origen", ylab = "Number of no-readmitted patients", 
-      main = "Most common origen") + theme_grey() + scale_y_continuous(labels=percent) +
-  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 12), axis.title=element_text(size=14,face="bold"))+
+      main = "Most common origen") + theme_grey() +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 8), axis.title=element_text(size=14,face="bold"))+
   theme(panel.background = element_rect(fill = 'moccasin', colour = 'black'))
 
 
